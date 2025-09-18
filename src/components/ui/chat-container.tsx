@@ -1,5 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/hooks/use-theme';
+import { Button } from '@/components/ui/button';
 
 interface ChatContainerProps {
   children: React.ReactNode;
@@ -28,6 +30,11 @@ interface ChatHeaderProps {
 }
 
 export const ChatHeader = ({ title, subtitle, onSettingsClick }: ChatHeaderProps) => {
+  const { theme, setTheme } = useTheme();
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
   return (
     <div className="bg-gradient-to-r from-primary to-primary-glow p-6 text-primary-foreground">
       <div className="flex items-center justify-between">
@@ -35,15 +42,28 @@ export const ChatHeader = ({ title, subtitle, onSettingsClick }: ChatHeaderProps
           <h1 className="text-xl font-bold">{title}</h1>
           {subtitle && <p className="text-sm opacity-90 mt-1">{subtitle}</p>}
         </div>
-        {onSettingsClick && (
-          <button
-            onClick={onSettingsClick}
-            className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 
-                     flex items-center justify-center transition-colors"
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleTheme}
+            className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white
+                     flex items-center justify-center transition-colors p-0"
           >
-            <span className="text-lg">⚙️</span>
-          </button>
-        )}
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </Button>
+          {onSettingsClick && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onSettingsClick}
+              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white
+                       flex items-center justify-center transition-colors p-0"
+            >
+              <span className="text-lg">⚙️</span>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -149,9 +169,9 @@ export const ChatInput = ({
           disabled={disabled || !value.trim()}
           className="w-12 h-12 rounded-full bg-gradient-to-r from-primary to-primary-glow
                    text-primary-foreground font-medium text-lg
-                   hover:shadow-[var(--shadow-glow)] transition-all duration-300
+                   hover:shadow-[var(--shadow-glow)] transition-all duration-300 transform hover:scale-105
                    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none
-                   flex items-center justify-center animate-bounce hover:animate-none"
+                   flex items-center justify-center"
         >
           ✈️
         </button>

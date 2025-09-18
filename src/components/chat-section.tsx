@@ -2,23 +2,32 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChatContainer, ChatHeader, ChatMessages, Message, ChatInput } from '@/components/ui/chat-container';
 import { Button } from '@/components/ui/button';
 
-// Simplified healthcare knowledge for demo
+// Healthcare knowledge base with consistent responses
 const healthcareResponses = {
   fever: {
-    diagnosis: "Based on your symptoms, you might have a fever. This could be due to various causes including infections.",
-    precautions: "Stay hydrated, get rest, take paracetamol if needed, and monitor your temperature. Consult a doctor if fever persists or worsens."
+    diagnosis: "Based on your symptoms of fever, you might have a viral or bacterial infection.",
+    additional_symptoms: "Other symptoms may include: chills, sweating, headache, muscle aches, fatigue, and loss of appetite.",
+    precautions: "Stay hydrated with ORS, take paracetamol for fever (avoid aspirin), get complete rest, monitor temperature regularly, and seek medical attention if fever persists for more than 3 days or exceeds 103°F (39.4°C)."
   },
   headache: {
     diagnosis: "Your headache symptoms suggest it could be tension headache, migraine, or other causes.",
-    precautions: "Rest in a dark room, apply cold/warm compress, stay hydrated, and avoid stress. Consult a doctor if severe or persistent."
+    additional_symptoms: "Other symptoms may include: sensitivity to light/sound, nausea, vomiting, throbbing pain, and visual disturbances.",
+    precautions: "Rest in a dark, quiet room, apply cold/warm compress, stay hydrated, maintain regular sleep schedule, manage stress, and consult a neurologist if headaches are frequent or severe."
   },
   cough: {
-    diagnosis: "Persistent cough can indicate respiratory infection, allergies, or other conditions.",
-    precautions: "Stay hydrated, use honey for soothing, avoid irritants, and get adequate rest. See a doctor if cough persists or worsens."
+    diagnosis: "Your cough symptoms suggest possible respiratory infection, allergies, or irritation.",
+    additional_symptoms: "Other symptoms may include: throat irritation, phlegm production, chest congestion, shortness of breath, and fatigue.",
+    precautions: "Stay hydrated, use honey for soothing (avoid for children under 1 year), avoid irritants like smoke, get adequate rest, use a humidifier, and consult a doctor if cough persists for more than 2 weeks or is accompanied by blood."
   },
   "stomach pain": {
-    diagnosis: "Stomach pain can be due to acidity, gastritis, indigestion, or other digestive issues.",
-    precautions: "Eat light foods, avoid spicy/oily meals, stay hydrated, and rest. Consult a doctor if pain is severe or persistent."
+    diagnosis: "Your stomach pain symptoms can indicate acidity, gastritis, indigestion, or other digestive issues.",
+    additional_symptoms: "Other symptoms may include: burning sensation, bloating, nausea, loss of appetite, and pain after eating.",
+    precautions: "Eat small frequent meals, avoid spicy and oily foods, don't skip meals, drink plenty of water, avoid alcohol and smoking, take antacids if needed, and consult a gastroenterologist if symptoms persist."
+  },
+  emergency: {
+    diagnosis: "This appears to be a serious medical situation that requires immediate attention.",
+    additional_symptoms: "Emergency symptoms include: severe chest pain, difficulty breathing, severe bleeding, loss of consciousness, or severe allergic reactions.",
+    precautions: "🚨 SEEK IMMEDIATE MEDICAL ATTENTION: Call emergency services (108/102 in India, 911 in US), go to the nearest hospital emergency room, or contact your doctor immediately. Do not delay medical care for emergencies."
   }
 };
 
@@ -67,15 +76,22 @@ export const ChatSection = () => {
   const analyzeSymptoms = (userInput: string): string => {
     const input = userInput.toLowerCase();
     
-    // Simple keyword matching
+    // Emergency keywords
+    const emergencyKeywords = ['emergency', 'severe pain', 'chest pain', 'can\'t breathe', 'unconscious', 'bleeding heavily', 'heart attack', 'stroke'];
+    if (emergencyKeywords.some(keyword => input.includes(keyword))) {
+      const response = healthcareResponses.emergency;
+      return `🚨 **EMERGENCY DETECTED:**\n\n${response.diagnosis}\n\n**Additional Emergency Signs:**\n${response.additional_symptoms}\n\n**IMMEDIATE ACTION REQUIRED:**\n${response.precautions}`;
+    }
+    
+    // Regular symptom matching
     for (const [symptom, response] of Object.entries(healthcareResponses)) {
-      if (input.includes(symptom)) {
-        return `🏥 **Possible Condition Analysis:**\n\n${response.diagnosis}\n\n🛡️ **Recommended Precautions:**\n\n${response.precautions}\n\n⚠️ **Important:** This is AI-generated guidance. Please consult a healthcare professional for proper diagnosis and treatment.`;
+      if (symptom !== 'emergency' && input.includes(symptom)) {
+        return `🏥 **Condition Analysis:**\n\n${response.diagnosis}\n\n**Additional Symptoms to Watch:**\n${response.additional_symptoms}\n\n🛡️ **Recommended Precautions:**\n${response.precautions}\n\n⚠️ **Important:** This is AI-generated guidance. Please consult a healthcare professional for proper diagnosis and treatment.`;
       }
     }
 
     // Default response
-    return `Thank you for sharing your symptoms. While I can provide general health information, I recommend consulting with a healthcare professional for a proper evaluation of your condition.\n\n🆘 **For emergencies, please:**\n• Call emergency services immediately\n• Visit the nearest hospital\n• Contact your doctor\n\nIs there anything specific about your symptoms you'd like to know more about?`;
+    return `Thank you for sharing your symptoms. While I can provide general health information, I recommend consulting with a healthcare professional for a proper evaluation of your condition.\n\n🆘 **For emergencies, please:**\n• Call emergency services immediately (108/102 in India)\n• Visit the nearest hospital\n• Contact your doctor\n\nPlease describe your specific symptoms like fever, headache, cough, or stomach pain for more targeted guidance.`;
   };
 
   const handleSendMessage = async () => {

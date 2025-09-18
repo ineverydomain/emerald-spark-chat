@@ -57,8 +57,7 @@ export const HeroSection = ({ onStartChat }: HeroSectionProps) => {
               onClick={scrollToChat}
               size="lg"
               className="bg-gradient-to-r from-primary to-primary-glow hover:shadow-[var(--shadow-glow)]
-                       text-lg px-8 py-6 rounded-full transition-all duration-300 transform hover:scale-105
-                       animate-bounce hover:animate-none"
+                       text-lg px-8 py-6 rounded-full transition-all duration-300 transform hover:scale-105"
             >
               Start Health Chat ✨
             </Button>
@@ -66,6 +65,7 @@ export const HeroSection = ({ onStartChat }: HeroSectionProps) => {
             <Button 
               variant="outline" 
               size="lg"
+              onClick={() => window.location.href = '/about'}
               className="text-lg px-8 py-6 rounded-full border-border hover:bg-secondary/50
                        transition-all duration-300"
             >
@@ -93,12 +93,6 @@ export const HeroSection = ({ onStartChat }: HeroSectionProps) => {
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-        <div className="w-6 h-10 border-2 border-muted-foreground rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-muted-foreground rounded-full mt-2 animate-bounce" />
-        </div>
-      </div>
     </section>
   );
 };

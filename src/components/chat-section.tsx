@@ -1,35 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatContainer, ChatHeader, ChatMessages, Message, ChatInput } from '@/components/ui/chat-container';
 import { Button } from '@/components/ui/button';
-
-// Healthcare knowledge base with consistent responses
-const healthcareResponses = {
-  fever: {
-    diagnosis: "Based on your symptoms of fever, you might have a viral or bacterial infection.",
-    additional_symptoms: "Other symptoms may include: chills, sweating, headache, muscle aches, fatigue, and loss of appetite.",
-    precautions: "Stay hydrated with ORS, take paracetamol for fever (avoid aspirin), get complete rest, monitor temperature regularly, and seek medical attention if fever persists for more than 3 days or exceeds 103°F (39.4°C)."
-  },
-  headache: {
-    diagnosis: "Your headache symptoms suggest it could be tension headache, migraine, or other causes.",
-    additional_symptoms: "Other symptoms may include: sensitivity to light/sound, nausea, vomiting, throbbing pain, and visual disturbances.",
-    precautions: "Rest in a dark, quiet room, apply cold/warm compress, stay hydrated, maintain regular sleep schedule, manage stress, and consult a neurologist if headaches are frequent or severe."
-  },
-  cough: {
-    diagnosis: "Your cough symptoms suggest possible respiratory infection, allergies, or irritation.",
-    additional_symptoms: "Other symptoms may include: throat irritation, phlegm production, chest congestion, shortness of breath, and fatigue.",
-    precautions: "Stay hydrated, use honey for soothing (avoid for children under 1 year), avoid irritants like smoke, get adequate rest, use a humidifier, and consult a doctor if cough persists for more than 2 weeks or is accompanied by blood."
-  },
-  "stomach pain": {
-    diagnosis: "Your stomach pain symptoms can indicate acidity, gastritis, indigestion, or other digestive issues.",
-    additional_symptoms: "Other symptoms may include: burning sensation, bloating, nausea, loss of appetite, and pain after eating.",
-    precautions: "Eat small frequent meals, avoid spicy and oily foods, don't skip meals, drink plenty of water, avoid alcohol and smoking, take antacids if needed, and consult a gastroenterologist if symptoms persist."
-  },
-  emergency: {
-    diagnosis: "This appears to be a serious medical situation that requires immediate attention.",
-    additional_symptoms: "Emergency symptoms include: severe chest pain, difficulty breathing, severe bleeding, loss of consciousness, or severe allergic reactions.",
-    precautions: "🚨 SEEK IMMEDIATE MEDICAL ATTENTION: Call emergency services (108/102 in India, 911 in US), go to the nearest hospital emergency room, or contact your doctor immediately. Do not delay medical care for emergencies."
-  }
-};
+import { healthcareService, type AnalysisResult } from '@/lib/healthcare-service';
 
 interface ChatMessage {
   id: string;
@@ -47,7 +19,8 @@ export const ChatSection = () => {
   useEffect(() => {
     // Welcome message
     if (messages.length === 0) {
-      addBotMessage("🌿 Welcome to SwasthSaathi! I'm your AI health assistant. Please describe your symptoms, and I'll provide guidance. Remember, this is for informational purposes only - consult a doctor for serious concerns.");
+      const welcomeMessage = healthcareService.getWelcomeMessage('english');
+      addBotMessage(welcomeMessage);
     }
   }, []);
 
@@ -73,25 +46,54 @@ export const ChatSection = () => {
     addMessage(content, false);
   };
 
-  const analyzeSymptoms = (userInput: string): string => {
-    const input = userInput.toLowerCase();
-    
-    // Emergency keywords
-    const emergencyKeywords = ['emergency', 'severe pain', 'chest pain', 'can\'t breathe', 'unconscious', 'bleeding heavily', 'heart attack', 'stroke'];
-    if (emergencyKeywords.some(keyword => input.includes(keyword))) {
-      const response = healthcareResponses.emergency;
-      return `🚨 **EMERGENCY DETECTED:**\n\n${response.diagnosis}\n\n**Additional Emergency Signs:**\n${response.additional_symptoms}\n\n**IMMEDIATE ACTION REQUIRED:**\n${response.precautions}`;
-    }
-    
-    // Regular symptom matching
-    for (const [symptom, response] of Object.entries(healthcareResponses)) {
-      if (symptom !== 'emergency' && input.includes(symptom)) {
-        return `🏥 **Condition Analysis:**\n\n${response.diagnosis}\n\n**Additional Symptoms to Watch:**\n${response.additional_symptoms}\n\n🛡️ **Recommended Precautions:**\n${response.precautions}\n\n⚠️ **Important:** This is AI-generated guidance. Please consult a healthcare professional for proper diagnosis and treatment.`;
+  const formatAnalysisResult = (result: AnalysisResult): string => {
+    if (result.isEmergency) {
+      let response = `🚨 **EMERGENCY DETECTED:**\n\n${result.diagnosis}\n\n`;
+      
+      if (result.additionalSymptoms) {
+        response += `**Additional Emergency Signs:**\n${result.additionalSymptoms}\n\n`;
       }
+      
+      response += `**IMMEDIATE ACTION REQUIRED:**\n${result.precautions}`;
+      
+      if (result.emergencyNumbers && result.emergencyNumbers.length > 0) {
+        response += '\n\n📞 **EMERGENCY NUMBERS - CALL NOW!**\n';
+        result.emergencyNumbers.forEach(contact => {
+          response += `• **${contact.service}**: ${contact.number} (${contact.description})\n`;
+        });
+      }
+      
+      if (result.hospitals && result.hospitals.length > 0) {
+        response += '\n\n🏥 **NEAREST HOSPITALS:**\n';
+        result.hospitals.slice(0, 3).forEach((hospital, index) => {
+          response += `${index + 1}. **${hospital.name}**\n`;
+          response += `   📍 ${hospital.address}\n`;
+          response += `   📱 ${hospital.phone}\n`;
+          response += `   🚗 ${hospital.distance} | ⏱️ ${hospital.time}\n\n`;
+        });
+      }
+      
+      return response;
+    } else {
+      let response = `🏥 **Condition Analysis:**\n\n${result.diagnosis}`;
+      
+      if (result.additionalSymptoms) {
+        response += `\n\n**Additional Symptoms to Watch:**\n${result.additionalSymptoms}`;
+      }
+      
+      if (result.precautions) {
+        response += `\n\n🛡️ **Recommended Precautions:**\n${result.precautions}`;
+      }
+      
+      response += `\n\n⚠️ **Important:** This is AI-generated guidance. Please consult a healthcare professional for proper diagnosis and treatment.`;
+      
+      return response;
     }
+  };
 
-    // Default response
-    return `Thank you for sharing your symptoms. While I can provide general health information, I recommend consulting with a healthcare professional for a proper evaluation of your condition.\n\n🆘 **For emergencies, please:**\n• Call emergency services immediately (108/102 in India)\n• Visit the nearest hospital\n• Contact your doctor\n\nPlease describe your specific symptoms like fever, headache, cough, or stomach pain for more targeted guidance.`;
+  const analyzeSymptoms = (userInput: string): string => {
+    const result = healthcareService.analyzeSymptoms(userInput);
+    return formatAnalysisResult(result);
   };
 
   const handleSendMessage = async () => {
@@ -110,7 +112,7 @@ export const ChatSection = () => {
     }, 1500);
   };
 
-  const quickSymptoms = ['Fever', 'Headache', 'Cough', 'Stomach Pain'];
+  const quickSymptoms = ['Fever', 'Headache', 'Cough', 'Stomach Pain', 'Diabetes', 'Breathing Problem'];
 
   const handleQuickSymptom = (symptom: string) => {
     setInputValue(symptom);
